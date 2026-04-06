@@ -62,7 +62,7 @@ html, body, [class*="css"] {
   max-width: 100% !important;
 }
 
-.block-container { padding: 24px 40px 40px !important; }
+.block-container { padding: 4px 40px 40px !important; }
 
 /* Sidebar collapse */
 [data-testid="stSidebar"]           { display: none !important; }
@@ -213,15 +213,15 @@ hr { border-color: var(--border) !important; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 32px;
+  padding: 10px 32px;
+  margin-bottom: 16px;
 }
 .form-card-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 28px;
+  gap: 10px;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 .form-card-icon {
   width: 42px;
@@ -450,6 +450,7 @@ hr { border-color: var(--border) !important; }
   max-width: 260px;
   margin: 0 auto;
   line-height: 1.6;
+  text-align: center;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -501,13 +502,7 @@ st.markdown("""
 <div class="topbar">
   <div class="topbar-left">
     <span class="topbar-brand">Credit Risk Analyzer</span>
-    <nav class="topbar-nav">
-      <a href="#">Dashboard</a>
-      <a href="#" class="active">Analysis</a>
-      <a href="#">ML Models</a>
-    </nav>
   </div>
-  <div style="font-size:11px;color:var(--on-muted)">Institutional Intelligence Platform</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -519,7 +514,6 @@ st.markdown(f"""
   <p class="eyebrow">Asset Assessment</p>
   <h1 class="page-title">
     Credit Risk Predictor
-    <span class="realtime-badge">Real-Time ML</span>
   </h1>
 </div>
 """, unsafe_allow_html=True)
@@ -553,13 +547,15 @@ with col_form:
         with r1a:
             age = st.number_input("Age", min_value=18, max_value=75, value=32)
         with r1b:
-            annual_income = st.number_input("Annual Income ($)", min_value=12_000, max_value=200_000, value=85_000, step=1_000, format="%d")
+            annual_income = st.number_input("Annual Income", min_value=12_000, max_value=200_000, value=85_000, step=1_000, format="%d")
+            st.caption(f"$ {annual_income:,.2f}")
 
         r2a, r2b = st.columns(2)
         with r2a:
             employment_years = st.number_input("Employment Length (Years)", min_value=0, max_value=40, value=7)
         with r2b:
-            loan_amount = st.number_input("Loan Amount ($)", min_value=1_000, max_value=60_000, value=25_000, step=500, format="%d")
+            loan_amount = st.number_input("Loan Amount", min_value=1_000, max_value=60_000, value=25_000, step=500, format="%d")
+            st.caption(f"$ {loan_amount:,.2f}")
 
         r3a, r3b = st.columns(2)
         with r3a:
@@ -601,7 +597,7 @@ with col_result:
             </svg>
           </div>
           <p class="placeholder-title">Awaiting Analysis</p>
-          <p class="placeholder-desc">
+          <p class="placeholder-desc" style="text-align:center;margin:0 auto">
             Complete the applicant form and click
             <strong style="color:var(--primary);font-weight:700">Run Risk Analysis</strong>
             to generate a prediction.
@@ -669,18 +665,20 @@ with col_result:
 
           <!-- Circular gauge -->
           <div class="gauge-wrap">
-            <svg width="160" height="160" viewBox="0 0 160 160" style="transform:rotate(-90deg)">
-              <circle cx="80" cy="80" r="{r}" fill="transparent"
-                stroke="#e0e3e7" stroke-width="12"/>
-              <circle cx="80" cy="80" r="{r}" fill="transparent"
-                stroke="{stroke_col}" stroke-width="12"
-                stroke-dasharray="{circ:.2f}"
-                stroke-dashoffset="{dash_offset:.2f}"
-                stroke-linecap="round"/>
-            </svg>
-            <div style="margin-top:-130px;margin-bottom:16px;position:relative;z-index:2;">
-              <p class="gauge-score">{proba:.0%}</p>
-              <p class="gauge-label">Default Probability</p>
+            <div style="position:relative;width:160px;height:160px;margin:0 auto 20px;">
+              <svg width="160" height="160" viewBox="0 0 160 160" style="transform:rotate(-90deg);display:block;">
+                <circle cx="80" cy="80" r="{r}" fill="transparent"
+                  stroke="#e0e3e7" stroke-width="12"/>
+                <circle cx="80" cy="80" r="{r}" fill="transparent"
+                  stroke="{stroke_col}" stroke-width="12"
+                  stroke-dasharray="{circ:.2f}"
+                  stroke-dashoffset="{dash_offset:.2f}"
+                  stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <p class="gauge-score">{proba:.0%}</p>
+                <p class="gauge-label">Default Probability</p>
+              </div>
             </div>
           </div>
 
@@ -703,31 +701,6 @@ with col_result:
           </div>
         </div>
 
-        <!-- Market context glass card -->
-        <div class="glass-card">
-          <div class="glass-card-header">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006a6a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-            <p class="glass-card-title">Market Context</p>
-          </div>
-          <div class="market-row">
-            <div>
-              <p class="market-stat-label">Sector Default Rate</p>
-              <p class="market-stat-val">18.4%</p>
-            </div>
-            <div style="text-align:right">
-              <p class="market-stat-label">Model Approval Rate</p>
-              <p class="market-stat-val">64%</p>
-            </div>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:{round((1-proba)*100)}%"></div>
-          </div>
-          <p style="font-size:10px;color:var(--on-muted);margin-top:8px;text-align:right">
-            Applicant score vs. population
-          </p>
-        </div>
         """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
