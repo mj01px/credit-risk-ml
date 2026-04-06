@@ -13,9 +13,40 @@ st.set_page_config(
     layout="wide",
 )
 
-# ── Load model ────────────────────────────────────────────────────────────────
+# ── Load model (train on first run if needed) ─────────────────────────────────
 @st.cache_resource
 def load_model():
+    import os
+    import sys
+
+    # Train if model missing or incompatible (e.g. sklearn version mismatch)
+    try:
+        artifact = joblib.load(MODEL_PATH)
+        # Smoke-test to catch version incompatibilities early
+        artifact["pipeline"].predict_proba(
+            pd.DataFrame([{
+                "age": 30, "annual_income": 50000, "employment_years": 5,
+                "loan_amount": 10000, "loan_duration_months": 36,
+                "num_credit_lines": 3, "debt_to_income_ratio": 0.2,
+                "loan_purpose": "personal", "credit_history": "good",
+            }])
+        )
+        return artifact
+    except Exception:
+        pass
+
+    # Generate data if missing
+    data_path = "data/credit_risk.csv"
+    if not os.path.exists(data_path):
+        sys.path.insert(0, ".")
+        from data.generate import generate
+        os.makedirs("data", exist_ok=True)
+        generate().to_csv(data_path, index=False)
+
+    # Run training pipeline
+    os.makedirs("models", exist_ok=True)
+    import subprocess
+    subprocess.run([sys.executable, "train.py"], check=True)
     return joblib.load(MODEL_PATH)
 
 
@@ -25,7 +56,7 @@ try:
     model_name = artifact["model_name"]
     metrics = artifact["metrics"]
     MODEL_LOADED = True
-except FileNotFoundError:
+except Exception:
     MODEL_LOADED = False
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
