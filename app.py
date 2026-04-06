@@ -10,110 +10,241 @@ MODEL_PATH = "models/best_model.pkl"
 
 st.set_page_config(
     page_title="Credit Risk Analyzer",
-    page_icon="💳",
+    page_icon="assets/favicon.png" if os.path.exists("assets/favicon.png") else None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
+# ── Design system (mirrors game-rent dark palette) ────────────────────────────
 st.markdown("""
 <style>
-  [data-testid="stAppViewContainer"] { background: #0f1117; }
-  [data-testid="stSidebar"] { background: #161b22; border-right: 1px solid #21262d; }
-  [data-testid="stSidebar"] * { color: #e6edf3 !important; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-  .card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 12px;
-    padding: 24px;
+  :root {
+    --bg:         #141414;
+    --surface:    #1C1C1C;
+    --surface-2:  #242424;
+    --border:     #3C4043;
+    --border-sub: #2A2A2A;
+
+    --text:       #E8EAED;
+    --text-sub:   #9AA0A6;
+    --text-muted: #5F6368;
+
+    --accent:     #8AB4F8;
+    --danger:     #F28B82;
+    --success:    #81C995;
+    --warning:    #FDD663;
+  }
+
+  html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  /* App background */
+  [data-testid="stAppViewContainer"],
+  [data-testid="stApp"] { background: var(--bg) !important; }
+
+  /* Sidebar */
+  [data-testid="stSidebar"] {
+    background: var(--surface) !important;
+    border-right: 1px solid var(--border-sub) !important;
+  }
+  [data-testid="stSidebar"] label,
+  [data-testid="stSidebar"] p,
+  [data-testid="stSidebar"] span,
+  [data-testid="stSidebar"] div { color: var(--text-sub) !important; }
+
+  /* Inputs */
+  [data-testid="stSidebar"] input,
+  [data-testid="stSidebar"] select,
+  [data-testid="stSidebar"] textarea {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 6px !important;
+  }
+
+  /* Slider */
+  [data-testid="stSlider"] [role="slider"] { background: var(--accent) !important; }
+  [data-testid="stSlider"] > div > div > div { background: var(--border) !important; }
+  [data-testid="stSlider"] > div > div > div > div { background: var(--accent) !important; }
+
+  /* Button */
+  .stButton > button {
+    background: var(--accent) !important;
+    color: #0d1b2a !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    letter-spacing: .01em !important;
+    padding: 10px 0 !important;
+    transition: opacity 150ms ease !important;
+  }
+  .stButton > button:hover { opacity: .85 !important; }
+
+  /* Expander */
+  [data-testid="stExpander"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border-sub) !important;
+    border-radius: 8px !important;
+  }
+  [data-testid="stExpander"] summary span { color: var(--text-sub) !important; }
+
+  /* Metric */
+  [data-testid="metric-container"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border-sub) !important;
+    border-radius: 8px !important;
+    padding: 14px 16px !important;
+  }
+  [data-testid="stMetricValue"] { color: var(--text) !important; font-size: 22px !important; }
+  [data-testid="stMetricLabel"] { color: var(--text-muted) !important; font-size: 11px !important; }
+
+  /* Divider */
+  hr { border-color: var(--border-sub) !important; }
+
+  /* Global text */
+  h1, h2, h3, h4 { color: var(--text) !important; font-weight: 600 !important; }
+  p, span, label  { color: var(--text-sub) !important; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ── Custom components ── */
+  .page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text) !important;
+    margin: 0 0 4px;
+    letter-spacing: -.02em;
+  }
+  .page-sub {
+    font-size: 13px;
+    color: var(--text-muted) !important;
+    margin: 0 0 24px;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted) !important;
+    margin: 20px 0 8px;
+  }
+  .result-card {
+    border-radius: 10px;
+    padding: 22px 24px;
     margin-bottom: 16px;
   }
-  .risk-high {
-    background: linear-gradient(135deg, #2d1515 0%, #1a0a0a 100%);
-    border: 1px solid #f85149;
-    border-radius: 12px;
-    padding: 20px 24px;
-    text-align: center;
+  .result-card.danger {
+    background: #1f0f0f;
+    border: 1px solid #5c2323;
   }
-  .risk-low {
-    background: linear-gradient(135deg, #0d2318 0%, #061a10 100%);
-    border: 1px solid #3fb950;
-    border-radius: 12px;
-    padding: 20px 24px;
-    text-align: center;
+  .result-card.success {
+    background: #0b1a10;
+    border: 1px solid #1e4d2b;
   }
-  .risk-title { font-size: 22px; font-weight: 700; margin: 0; }
-  .risk-high .risk-title { color: #f85149; }
-  .risk-low  .risk-title { color: #3fb950; }
-  .risk-sub  { font-size: 13px; color: #8b949e; margin-top: 4px; }
-
-  .stat-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
+  .result-verdict {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 4px;
   }
-  .stat-box {
-    flex: 1;
-    background: #0d1117;
-    border: 1px solid #21262d;
-    border-radius: 8px;
-    padding: 14px;
-    text-align: center;
-  }
-  .stat-val { font-size: 24px; font-weight: 700; color: #e6edf3; }
-  .stat-lbl { font-size: 11px; color: #6e7681; text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
-
-  .badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 12px;
-  }
-  .badge-vlow  { background:#0d2318; color:#3fb950; border:1px solid #3fb950; }
-  .badge-low   { background:#0f2d1a; color:#56d364; border:1px solid #56d364; }
-  .badge-med   { background:#2d2208; color:#e3b341; border:1px solid #e3b341; }
-  .badge-high  { background:#2d1515; color:#f85149; border:1px solid #f85149; }
-  .badge-vhigh { background:#1a0505; color:#ff7b72; border:1px solid #ff7b72; }
-
-  .section-title {
+  .result-card.danger  .result-verdict { color: var(--danger);  }
+  .result-card.success .result-verdict { color: var(--success); }
+  .result-desc {
     font-size: 13px;
-    font-weight: 600;
-    color: #8b949e;
+    color: var(--text-muted) !important;
+    margin: 0 0 16px;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stat-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border-sub);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .stat-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text) !important;
+    letter-spacing: -.01em;
+  }
+  .stat-lbl {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .06em;
     text-transform: uppercase;
-    letter-spacing: .08em;
-    margin-bottom: 12px;
+    color: var(--text-muted) !important;
+    margin-top: 3px;
   }
-  h1, h2, h3 { color: #e6edf3 !important; }
-  p, label, span { color: #8b949e; }
-  .stButton > button {
-    background: #238636 !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 8px !important;
-    font-weight: 600 !important;
-    padding: 10px !important;
+  .risk-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
   }
-  .stButton > button:hover { background: #2ea043 !important; }
-  div[data-testid="metric-container"] {
-    background: #0d1117;
-    border: 1px solid #21262d;
-    border-radius: 8px;
-    padding: 12px 16px;
+  .badge-vlow  { background:#0b1a10; color:var(--success); border:1px solid #1e4d2b; }
+  .badge-low   { background:#0d2015; color:#57D98A; border:1px solid #1a4a27; }
+  .badge-med   { background:#1c1a0a; color:var(--warning); border:1px solid #5c4a10; }
+  .badge-high  { background:#1f0f0f; color:var(--danger);  border:1px solid #5c2323; }
+  .badge-vhigh { background:#170505; color:#FF9F9A;         border:1px solid #6b1a1a; }
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
   }
-  div[data-testid="stExpander"] {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 8px;
+  .empty-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--surface);
+    border: 1px solid var(--border-sub);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .empty-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text) !important;
+    margin: 0 0 6px;
+  }
+  .empty-desc {
+    font-size: 13px;
+    color: var(--text-muted) !important;
+    max-width: 360px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .sidebar-logo {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text) !important;
+    letter-spacing: -.01em;
+    margin-bottom: 2px;
+  }
+  .sidebar-tagline {
+    font-size: 11px;
+    color: var(--text-muted) !important;
   }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── Load model ────────────────────────────────────────────────────────────────
-@st.cache_resource(show_spinner="Training model, please wait...")
+# ── Load / train model ────────────────────────────────────────────────────────
+@st.cache_resource(show_spinner="Preparing model...")
 def load_model():
     try:
         artifact = joblib.load(MODEL_PATH)
@@ -141,10 +272,10 @@ def load_model():
 
 
 try:
-    artifact  = load_model()
-    pipeline  = artifact["pipeline"]
+    artifact   = load_model()
+    pipeline   = artifact["pipeline"]
     model_name = artifact["model_name"]
-    metrics   = artifact["metrics"]
+    metrics    = artifact["metrics"]
     MODEL_LOADED = True
 except Exception:
     MODEL_LOADED = False
@@ -152,52 +283,53 @@ except Exception:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 💳 Credit Risk Analyzer")
-    st.markdown("<p style='font-size:13px;color:#6e7681;margin-top:-8px'>Fill in the fields and click Analyze</p>", unsafe_allow_html=True)
-    st.markdown("---")
+    st.markdown("""
+    <div style="padding:4px 0 20px">
+      <div class="sidebar-logo">Credit Risk Analyzer</div>
+      <div class="sidebar-tagline">Default probability predictor</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("<p class='section-title'>👤 Applicant</p>", unsafe_allow_html=True)
-    age              = st.slider("Age", 18, 75, 35)
+    st.markdown('<div class="section-label">Applicant</div>', unsafe_allow_html=True)
+    age              = st.slider("Age", 18, 75, 35, label_visibility="collapsed")
+    st.caption(f"Age: {age} years")
     annual_income    = st.number_input("Annual Income ($)", 12_000, 200_000, 55_000, 1_000, format="%d")
     employment_years = st.slider("Years Employed", 0, 40, 5)
 
-    st.markdown("---")
-    st.markdown("<p class='section-title'>🏦 Loan</p>", unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Loan</div>', unsafe_allow_html=True)
     loan_amount          = st.number_input("Loan Amount ($)", 1_000, 60_000, 15_000, 500, format="%d")
-    loan_duration_months = st.selectbox("Duration", [12, 24, 36, 48, 60],
-                                         index=2, format_func=lambda x: f"{x} months")
+    loan_duration_months = st.selectbox("Duration", [12, 24, 36, 48, 60], index=2,
+                                         format_func=lambda x: f"{x} months")
     loan_purpose         = st.selectbox("Purpose",
                                          ["personal", "car", "education", "home_improvement", "medical"],
                                          format_func=lambda x: x.replace("_", " ").title())
 
-    st.markdown("---")
-    st.markdown("<p class='section-title'>📊 Credit Profile</p>", unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Credit Profile</div>', unsafe_allow_html=True)
     credit_history   = st.selectbox("Credit History", ["good", "fair", "poor"], format_func=str.title)
     num_credit_lines = st.slider("Credit Lines", 0, 15, 3)
 
-    st.markdown("---")
-    predict_btn = st.button("🔍 Analyze Risk", use_container_width=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    predict_btn = st.button("Analyze Risk", use_container_width=True)
 
 
-# ── Header ────────────────────────────────────────────────────────────────────
-st.markdown("# Credit Risk Analyzer")
-st.markdown("<p style='color:#8b949e;margin-top:-12px;margin-bottom:24px'>Predict loan default probability using machine learning</p>", unsafe_allow_html=True)
+# ── Main ──────────────────────────────────────────────────────────────────────
+st.markdown('<p class="page-title">Credit Risk Analyzer</p>', unsafe_allow_html=True)
+st.markdown('<p class="page-sub">Predict loan default probability using machine learning</p>', unsafe_allow_html=True)
 
 if not MODEL_LOADED:
     st.error("Model failed to load. Check the logs.")
     st.stop()
 
-# Model info strip
-with st.expander("ℹ️ Model Info", expanded=False):
+with st.expander("Model details", expanded=False):
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Algorithm",  model_name)
-    c2.metric("Test AUC",   metrics.get("test_auc", "—"))
-    c3.metric("CV AUC",     metrics.get("cv_auc", "—"))
-    c4.metric("Accuracy",   f"{metrics.get('accuracy', 0):.1%}")
+    c1.metric("Algorithm", model_name)
+    c2.metric("Test AUC",  metrics.get("test_auc", "—"))
+    c3.metric("CV AUC",    metrics.get("cv_auc",   "—"))
+    c4.metric("Accuracy",  f"{metrics.get('accuracy', 0):.1%}")
 
 st.markdown("---")
 
-# ── Prediction ────────────────────────────────────────────────────────────────
+# ── Prediction result ─────────────────────────────────────────────────────────
 if predict_btn:
     dti = round((loan_amount / loan_duration_months * 12) / annual_income, 3)
 
@@ -221,29 +353,30 @@ if predict_btn:
         ("Very High", "badge-vhigh")
     )
 
-    verdict_cls   = "risk-high" if prediction else "risk-low"
-    verdict_title = "HIGH RISK — Likely to Default" if prediction else "LOW RISK — Unlikely to Default"
-    verdict_sub   = "This applicant has a high probability of defaulting." if prediction else "This applicant is unlikely to default on the loan."
+    card_cls      = "danger"  if prediction else "success"
+    verdict_title = "High Risk — Likely to Default"    if prediction else "Low Risk — Unlikely to Default"
+    verdict_desc  = "This applicant has a high probability of defaulting on the loan." if prediction \
+                    else "This applicant is unlikely to default based on the provided data."
 
     col_left, col_right = st.columns([1, 1], gap="large")
 
     with col_left:
         st.markdown(f"""
-        <div class="{verdict_cls}">
-          <p class="risk-title">{verdict_title}</p>
-          <p class="risk-sub">{verdict_sub}</p>
-          <span class="badge {badge_cls}">Risk Level: {risk_label}</span>
+        <div class="result-card {card_cls}">
+          <p class="result-verdict">{verdict_title}</p>
+          <p class="result-desc">{verdict_desc}</p>
+          <span class="risk-badge {badge_cls}">{risk_label} Risk</span>
         </div>
-        <div class="stat-row">
-          <div class="stat-box">
+        <div class="stat-grid">
+          <div class="stat-item">
             <div class="stat-val">{proba:.1%}</div>
             <div class="stat-lbl">Default Probability</div>
           </div>
-          <div class="stat-box">
+          <div class="stat-item">
             <div class="stat-val">{dti:.1%}</div>
-            <div class="stat-lbl">Debt-to-Income</div>
+            <div class="stat-lbl">Debt / Income</div>
           </div>
-          <div class="stat-box">
+          <div class="stat-item">
             <div class="stat-val">${loan_amount:,}</div>
             <div class="stat-lbl">Loan Amount</div>
           </div>
@@ -251,38 +384,45 @@ if predict_btn:
         """, unsafe_allow_html=True)
 
     with col_right:
-        bar_color = "#f85149" if prediction else "#3fb950"
+        needle_color = "#F28B82" if prediction else "#81C995"
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=round(proba * 100, 1),
-            number={"suffix": "%", "font": {"size": 36, "color": "#e6edf3"}},
-            title={"text": "Default Probability", "font": {"color": "#8b949e", "size": 14}},
+            number={"suffix": "%", "font": {"size": 34, "color": "#E8EAED", "family": "Inter"}},
+            title={"text": "Default Probability", "font": {"color": "#5F6368", "size": 12, "family": "Inter"}},
             gauge={
-                "axis": {"range": [0, 100], "tickcolor": "#6e7681",
-                         "tickfont": {"color": "#6e7681"}},
-                "bar": {"color": bar_color, "thickness": 0.25},
-                "bgcolor": "#0d1117",
-                "bordercolor": "#21262d",
+                "axis": {
+                    "range": [0, 100],
+                    "tickcolor": "#3C4043",
+                    "tickfont": {"color": "#5F6368", "size": 10},
+                },
+                "bar": {"color": needle_color, "thickness": 0.22},
+                "bgcolor": "#141414",
+                "bordercolor": "#2A2A2A",
                 "steps": [
-                    {"range": [0,  40], "color": "#0d2318"},
+                    {"range": [0,  40], "color": "#0b1a10"},
                     {"range": [40, 60], "color": "#1c1a0a"},
-                    {"range": [60, 100],"color": "#2d1515"},
+                    {"range": [60, 100],"color": "#1f0f0f"},
                 ],
-                "threshold": {"line": {"color": "#e6edf3", "width": 2},
-                              "thickness": 0.8, "value": 50},
+                "threshold": {
+                    "line": {"color": "#9AA0A6", "width": 2},
+                    "thickness": 0.75,
+                    "value": 50,
+                },
             },
         ))
         fig.update_layout(
-            height=280,
-            margin=dict(t=40, b=0, l=30, r=30),
+            height=270,
+            margin=dict(t=50, b=10, l=30, r=30),
             paper_bgcolor="rgba(0,0,0,0)",
-            font={"color": "#e6edf3"},
+            plot_bgcolor="rgba(0,0,0,0)",
+            font={"family": "Inter"},
         )
         st.plotly_chart(fig, use_container_width=True)
 
     # ── Feature importance ─────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("<p class='section-title'>Feature Importance</p>", unsafe_allow_html=True)
+    st.markdown('<p class="section-label">Feature Importance</p>', unsafe_allow_html=True)
 
     clf = pipeline.named_steps["clf"]
     if hasattr(clf, "feature_importances_"):
@@ -297,35 +437,44 @@ if predict_btn:
             .sort_values("importance", ascending=True)
             .tail(10)
         )
-        colors = ["#388bfd" if f not in input_df.columns else "#f78166" for f in fi_df["feature"]]
 
         fig2 = go.Figure(go.Bar(
-            x=fi_df["importance"], y=fi_df["feature"],
-            orientation="h", marker_color="#388bfd",
+            x=fi_df["importance"],
+            y=fi_df["feature"],
+            orientation="h",
+            marker_color="#8AB4F8",
+            marker_line_width=0,
             hovertemplate="%{y}: %{x:.4f}<extra></extra>",
         ))
         fig2.update_layout(
-            height=340,
+            height=320,
             margin=dict(t=10, b=10, l=10, r=20),
-            xaxis=dict(title="Importance", color="#6e7681", gridcolor="#21262d", showline=False),
-            yaxis=dict(color="#8b949e", gridcolor="#21262d"),
-            plot_bgcolor="#161b22",
+            xaxis=dict(
+                title="Importance", color="#5F6368",
+                gridcolor="#2A2A2A", showline=False, tickfont={"size": 11},
+            ),
+            yaxis=dict(color="#9AA0A6", gridcolor="#2A2A2A", tickfont={"size": 11}),
+            plot_bgcolor="#1C1C1C",
             paper_bgcolor="rgba(0,0,0,0)",
-            font={"color": "#8b949e"},
+            font={"family": "Inter", "color": "#9AA0A6"},
         )
         st.plotly_chart(fig2, use_container_width=True)
     else:
         st.caption("Feature importance not available for this model type.")
 
 else:
-    # ── Empty state ────────────────────────────────────────────────────────────
     st.markdown("""
-    <div style="text-align:center;padding:60px 20px;">
-      <div style="font-size:56px;margin-bottom:16px">💳</div>
-      <h3 style="color:#e6edf3;margin-bottom:8px">Ready to Analyze</h3>
-      <p style="color:#6e7681;max-width:400px;margin:0 auto">
-        Fill in the applicant's profile and loan details in the sidebar,
-        then click <strong style="color:#e6edf3">Analyze Risk</strong> to get the prediction.
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5F6368" stroke-width="2">
+          <rect x="2" y="5" width="20" height="14" rx="2"/>
+          <path d="M2 10h20"/>
+        </svg>
+      </div>
+      <p class="empty-title">Ready to analyze</p>
+      <p class="empty-desc">
+        Fill in the applicant profile and loan details in the sidebar,
+        then click <strong style="color:#E8EAED">Analyze Risk</strong> to get the prediction.
       </p>
     </div>
     """, unsafe_allow_html=True)
