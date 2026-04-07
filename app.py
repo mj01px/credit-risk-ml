@@ -15,6 +15,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  CSS — full design system fiel ao HTML
+# ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
@@ -66,6 +69,7 @@ html, body, [class*="css"] {
 [data-testid="collapsedControl"]    { display: none !important; }
 
 /* Hide Streamlit chrome */
+#MainMenu, footer, header { visibility: hidden !important; }
 
 /* Streamlit inputs */
 [data-testid="stNumberInput"] input,
@@ -451,6 +455,9 @@ hr { border-color: var(--border) !important; }
 </style>
 """, unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Load / train model
+# ─────────────────────────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner="Preparing model...")
 def load_model():
     try:
@@ -488,6 +495,9 @@ if not MODEL_LOADED:
     st.error("Model failed to load.")
     st.stop()
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Top bar
+# ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="topbar">
   <div class="topbar-left">
@@ -496,6 +506,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Page header
+# ─────────────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="page-header">
   <p class="eyebrow">Asset Assessment</p>
@@ -505,8 +518,12 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Two-column layout
+# ─────────────────────────────────────────────────────────────────────────────
 col_form, col_result = st.columns([7, 5], gap="large")
 
+# ── LEFT: form card ───────────────────────────────────────────────────────────
 with col_form:
     st.markdown("""
     <div class="form-card">
@@ -568,6 +585,7 @@ with col_form:
         st.markdown("<br>", unsafe_allow_html=True)
         predict_btn = st.button("Run Risk Analysis", use_container_width=False)
 
+# ── RIGHT: result card ────────────────────────────────────────────────────────
 with col_result:
     if not predict_btn:
         st.markdown("""
@@ -588,6 +606,7 @@ with col_result:
         """, unsafe_allow_html=True)
 
     else:
+        # ── Compute prediction ────────────────────────────────────────────────
         dti = round((loan_amount / loan_duration_months * 12) / annual_income, 3)
         input_df = pd.DataFrame([{
             "age": age, "annual_income": annual_income,
@@ -600,9 +619,10 @@ with col_result:
 
         proba      = pipeline.predict_proba(input_df)[0, 1]
         prediction = int(proba >= 0.5)
-        confidence = abs(proba - 0.5) * 2
+        confidence = abs(proba - 0.5) * 2  # 0-1 distance from decision boundary
         conf_pct   = round(50 + confidence * 50, 1)
 
+        # risk tier
         if proba < 0.35:
             risk_label, badge_cls = "Low Risk Tier",    "badge-low"
         elif proba < 0.60:
@@ -619,6 +639,7 @@ with col_result:
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ba1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
         )
 
+        # Circular SVG gauge params
         r          = 72
         circ       = 2 * math.pi * r
         fill_pct   = proba
@@ -682,6 +703,9 @@ with col_result:
 
         """, unsafe_allow_html=True)
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Feature importance (full width, only after analysis)
+# ─────────────────────────────────────────────────────────────────────────────
 if predict_btn:
     clf = pipeline.named_steps["clf"]
     if hasattr(clf, "feature_importances_"):
