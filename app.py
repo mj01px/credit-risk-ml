@@ -21,26 +21,26 @@ st.markdown("""
 
 /* tokens */
 :root {
-  --bg:
-  --surface:
-  --surface-lo:
-  --surface-mid:
-  --surface-hi:
-  --border:
-  --outline:
+  --bg:           #f7f9fe;
+  --surface:      #ffffff;
+  --surface-lo:   #f1f4f8;
+  --surface-mid:  #ebeef3;
+  --surface-hi:   #e5e8ed;
+  --border:       #e0e3e7;
+  --outline:      #c0c7cd;
 
-  --on-bg:
-  --on-sub:
-  --on-muted:
+  --on-bg:        #181c1f;
+  --on-sub:       #40484c;
+  --on-muted:     #71787d;
 
-  --primary:
-  --primary-cont:
-  --secondary:
-  --sec-cont:
-  --error:
-  --error-bg:
-  --tert-cont:
-  --on-tert-cont:
+  --primary:      #003345;
+  --primary-cont: #004b63;
+  --secondary:    #006a6a;
+  --sec-cont:     #9deeed;
+  --error:        #ba1a1a;
+  --error-bg:     #ffdad6;
+  --tert-cont:    #004e4a;
+  --on-tert-cont: #62c2bb;
 }
 
 html, body, [class*="css"] {
@@ -110,7 +110,7 @@ html, body, [class*="css"] {
 /* Button */
 .stButton > button {
   background: var(--primary) !important;
-  color:
+  color: #fff !important;
   border: none !important;
   border-radius: 10px !important;
   font-family: 'Inter', sans-serif !important;
@@ -287,7 +287,7 @@ hr { border-color: var(--border) !important; }
   text-transform: uppercase;
 }
 .badge-low    { background: rgba(0,106,106,.08); color: var(--secondary); }
-.badge-medium { background:
+.badge-medium { background: #fff8e1;              color: #7a5500; }
 .badge-high   { background: var(--error-bg);      color: var(--error); }
 .confidence-line {
   text-align: center;
