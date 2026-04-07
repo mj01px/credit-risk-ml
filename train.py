@@ -28,7 +28,6 @@ NUMERIC_FEATURES = [
 CATEGORICAL_FEATURES = ["loan_purpose", "credit_history"]
 TARGET = "default"
 
-
 def build_preprocessor() -> ColumnTransformer:
     return ColumnTransformer(
         transformers=[
@@ -36,7 +35,6 @@ def build_preprocessor() -> ColumnTransformer:
             ("cat", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL_FEATURES),
         ]
     )
-
 
 def build_pipelines() -> dict[str, Pipeline]:
     pre = build_preprocessor()
@@ -51,7 +49,6 @@ def build_pipelines() -> dict[str, Pipeline]:
             [("pre", build_preprocessor()), ("clf", GradientBoostingClassifier(n_estimators=200, random_state=42))]
         ),
     }
-
 
 def evaluate(pipelines: dict, X_train, X_test, y_train, y_test) -> dict:
     results = {}
@@ -77,7 +74,6 @@ def evaluate(pipelines: dict, X_train, X_test, y_train, y_test) -> dict:
         print(classification_report(y_test, y_pred, target_names=["No Default", "Default"]))
 
     return results
-
 
 def main():
     df = pd.read_csv(DATA_PATH)
@@ -110,7 +106,6 @@ def main():
         MODEL_PATH,
     )
     print(f"Saved to {MODEL_PATH}")
-
 
 if __name__ == "__main__":
     main()

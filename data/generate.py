@@ -5,10 +5,8 @@ import pandas as pd
 RNG = np.random.default_rng(42)
 N = 2000
 
-
 def _clamp(arr: np.ndarray, lo: float, hi: float) -> np.ndarray:
     return np.clip(arr, lo, hi)
-
 
 def generate(n: int = N) -> pd.DataFrame:
     age = _clamp(RNG.normal(38, 12, n), 18, 75).astype(int)
@@ -32,7 +30,6 @@ def generate(n: int = N) -> pd.DataFrame:
         0.95,
     ).round(3)
 
-    # Risk score: higher = more likely to default
     risk = (
         0.3 * (loan_amount / 60_000)
         + 0.2 * (1 - annual_income / 200_000)
@@ -58,7 +55,6 @@ def generate(n: int = N) -> pd.DataFrame:
             "default": default,
         }
     )
-
 
 if __name__ == "__main__":
     df = generate()
